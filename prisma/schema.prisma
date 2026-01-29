@@ -1,0 +1,240 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+    CUSTOMER
+    PROVIDER
+    ADMIN
+}
+
+enum OrderStatus {
+    PENDING
+    CONFIRMED
+    PREPARING
+    OUT_FOR_DELIVERY
+    DELIVERED
+    CANCELLED
+}
+
+// User Model
+model User {
+    id        String   @id @default(uuid())
+    name      String
+    email     String   @unique
+    password  String
+    role      UserRole @default(CUSTOMER)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relationships
+    restaurants Restaurant[] // Provider's restaurants
+    orders      Order[] // Customer's orders
+    cart        Cart? // Customer's cart (1:1)
+    reviews     Review[]
+    blogs       Blog[] // Blogs authored by Provider/Admin
+    favorites   Favorite[]
+
+    @@map("users")
+}
+
+// Restaurant Model
+model Restaurant {
+    id          String   @id @default(uuid())
+    name        String
+    description String?
+    address     String
+    logoUrl     String?
+    providerId  String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Relationships
+    provider               User                    @relation(fields: [providerId], references: [id])
+    foods                  Food[]
+    orders                 Order[] // Orders containing items from this restaurant (optional link for filtering)
+    reviews                Review[]
+    blogRelatedRestaurants BlogRelatedRestaurant[]
+
+    @@map("restaurants")
+}
+
+// Category Model
+model Category {
+    id        String   @id @default(uuid())
+    name      String   @unique
+    imageUrl  String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    foods Food[]
+
+    @@map("categories")
+}
+
+// Food Model
+model Food {
+    id           String   @id @default(uuid())
+    name         String
+    description  String?
+    price        Decimal
+    restaurantId String
+    categoryId   String
+    imageUrl     String?
+    isAvailable  Boolean  @default(true)
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    // Relationships
+    restaurant       Restaurant        @relation(fields: [restaurantId], references: [id])
+    category         Category          @relation(fields: [categoryId], references: [id])
+    orderItems       OrderItem[]
+    cartItems        CartItem[]
+    reviews          Review[]
+    favorites        Favorite[]
+    blogRelatedFoods BlogRelatedFood[]
+
+    @@map("foods")
+}
+
+// Order Model
+model Order {
+    id           String      @id @default(uuid())
+    customerId   String
+    restaurantId String? // Optional: If orders are per-restaurant. If mixed, this might be complex. Assuming mixed cart support might imply null here or multiple orders. Let's assume order per restaurant for simplicity, or just track items.
+    status       OrderStatus @default(PENDING)
+    totalPrice   Decimal
+    createdAt    DateTime    @default(now())
+    updatedAt    DateTime    @updatedAt
+
+    // Relationships
+    customer   User        @relation(fields: [customerId], references: [id])
+    restaurant Restaurant? @relation(fields: [restaurantId], references: [id]) // Optional linkage
+    orderItems OrderItem[]
+
+    @@map("orders")
+}
+
+// OrderItem Model
+model OrderItem {
+    id       String  @id @default(uuid())
+    orderId  String
+    foodId   String
+    quantity Int
+    price    Decimal // Snapshot of price at time of order
+
+    // Relationships
+    order Order @relation(fields: [orderId], references: [id])
+    food  Food  @relation(fields: [foodId], references: [id])
+
+    @@map("order_items")
+}
+
+// Cart Model
+model Cart {
+    id         String   @id @default(uuid())
+    customerId String   @unique
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    // Relationships
+    customer  User       @relation(fields: [customerId], references: [id])
+    cartItems CartItem[]
+
+    @@map("carts")
+}
+
+// CartItem Model
+model CartItem {
+    id        String   @id @default(uuid())
+    cartId    String
+    foodId    String
+    quantity  Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relationships
+    cart Cart @relation(fields: [cartId], references: [id])
+    food Food @relation(fields: [foodId], references: [id])
+
+    @@unique([cartId, foodId]) // Prevent duplicate items in same cart
+    @@map("cart_items")
+}
+
+// Favorite Model
+model Favorite {
+    id         String   @id @default(uuid())
+    customerId String
+    foodId     String
+    createdAt  DateTime @default(now())
+
+    customer User @relation(fields: [customerId], references: [id])
+    food     Food @relation(fields: [foodId], references: [id])
+
+    @@unique([customerId, foodId]) // Unique favorite per user per food
+    @@map("favorites")
+}
+
+// Blog Model
+model Blog {
+    id        String   @id @default(uuid())
+    title     String
+    content   String
+    authorId  String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    author      User                    @relation(fields: [authorId], references: [id])
+    restaurants BlogRelatedRestaurant[]
+    foods       BlogRelatedFood[]
+
+    @@map("blogs")
+}
+
+// Blog Linked to Restaurant
+model BlogRelatedRestaurant {
+    blogId       String
+    restaurantId String
+
+    blog       Blog       @relation(fields: [blogId], references: [id])
+    restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+    @@id([blogId, restaurantId])
+    @@map("blog_related_restaurants")
+}
+
+// Blog Linked to Food
+model BlogRelatedFood {
+    blogId String
+    foodId String
+
+    blog Blog @relation(fields: [blogId], references: [id])
+    food Food @relation(fields: [foodId], references: [id])
+
+    @@id([blogId, foodId])
+    @@map("blog_related_foods")
+}
+
+// Review Model
+model Review {
+    id           String   @id @default(uuid())
+    customerId   String
+    foodId       String?
+    restaurantId String?
+    rating       Int      @default(5) // 1-5
+    comment      String?
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    customer   User        @relation(fields: [customerId], references: [id])
+    food       Food?       @relation(fields: [foodId], references: [id])
+    restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
+
+    @@map("reviews")
+}
