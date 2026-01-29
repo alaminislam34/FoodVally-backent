@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    /* Project structure */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* Module system */
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2023",
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["node"],
+
+    /* Strict type checking */
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+
+    /* Module syntax */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+
+    /* Performance & compatibility */
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Path aliases (optional, for cleaner imports) */
+    "baseUrl": "./",
+    "paths": {
+      "@prisma/*": ["node_modules/@prisma/client/*"],
+      "@utils/*": ["src/utils/*"],
+      "@routes/*": ["src/routes/*"],
+      "@controllers/*": ["src/controllers/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
