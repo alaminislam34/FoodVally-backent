@@ -14,6 +14,12 @@ enum UserRole {
     ADMIN
 }
 
+enum UserStatus {
+    PENDING
+    ACTIVE
+    BLOCKED
+}
+
 enum OrderStatus {
     PENDING
     CONFIRMED
@@ -23,13 +29,43 @@ enum OrderStatus {
     CANCELLED
 }
 
+enum PaymentMethod {
+    COD
+    BKASH
+    NAGAD
+    CARD
+}
+
+enum PaymentStatus {
+    PENDING
+    PAID
+    FAILED
+}
+
+enum ReportStatus {
+    PENDING
+    RESOLVED
+    DISMISSED
+}
+
 // User Model
 model User {
     id        String   @id @default(uuid())
     name      String
     email     String   @unique
-    password  String
-    role      UserRole @default(CUSTOMER)
+    phone     String?
+    password  String?
+    role      UserRole   @default(CUSTOMER)
+    status    UserStatus @default(PENDING) // Email verification status
+    avatar    String?
+
+    // Social Login
+    googleId   String? @unique
+
+    // Security
+    otp          String? // Hashed OTP for verification
+    otpExpiresAt DateTime?
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -40,20 +76,47 @@ model User {
     reviews     Review[]
     blogs       Blog[] // Blogs authored by Provider/Admin
     favorites   Favorite[]
+    reports     Report[]
 
     @@map("users")
 }
 
 // Restaurant Model
 model Restaurant {
-    id          String   @id @default(uuid())
+    id          String  @id @default(uuid())
     name        String
+    slug        String  @unique
     description String?
-    address     String
-    logoUrl     String?
-    providerId  String
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+
+    // Location
+    address String
+    city    String?
+    lat     Float?
+    lng     Float?
+
+    // Branding
+    logoUrl  String?
+    coverUrl String?
+
+    // Stats and Info
+    averageRating Float    @default(0)
+    totalReviews  Int      @default(0)
+    cuisineTypes  String[] // ["Biriyani", "Chicken"]
+
+    // Delivery Info
+    deliveryTime        String?
+    deliveryFee         Decimal @default(0)
+    minOrderAmount      Decimal @default(0)
+    isDeliveryAvailable Boolean @default(true)
+
+    // Operation
+    openingHours Json? // Structured opening hours
+    isActive     Boolean @default(true)
+    isVerified   Boolean @default(false)
+
+    providerId String
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
 
     // Relationships
     provider               User                    @relation(fields: [providerId], references: [id])
@@ -61,6 +124,7 @@ model Restaurant {
     orders                 Order[] // Orders containing items from this restaurant (optional link for filtering)
     reviews                Review[]
     blogRelatedRestaurants BlogRelatedRestaurant[]
+    reports                Report[]
 
     @@map("restaurants")
 }
@@ -69,27 +133,54 @@ model Restaurant {
 model Category {
     id        String   @id @default(uuid())
     name      String   @unique
+    slug      String   @unique
     imageUrl  String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
     foods Food[]
+    blogs Blog[]
 
     @@map("categories")
 }
 
 // Food Model
 model Food {
-    id           String   @id @default(uuid())
-    name         String
-    description  String?
-    price        Decimal
+    id               String  @id @default(uuid())
+    name             String
+    slug             String  @unique
+    description      String?
+    shortDescription String?
+
+    price         Decimal
+    discountPrice Decimal?
+    currency      String   @default("BDT")
+
     restaurantId String
     categoryId   String
-    imageUrl     String?
+
+    // Media
+    thumbnail String?
+    images    String[]
+
+    // Details
+    isVeg           Boolean @default(false)
+    isSpicy         Boolean @default(false)
+    calories        Int?
+    preparationTime Int? // Minutes
+
+    // Status
     isAvailable  Boolean  @default(true)
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @updatedAt
+    isFeatured   Boolean  @default(false)
+    isBestSeller Boolean  @default(false)
+    stock        Int      @default(0)
+    tags         String[]
+
+    // SEO
+    seo Json? // Meta title, description, keywords
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     // Relationships
     restaurant       Restaurant        @relation(fields: [restaurantId], references: [id])
@@ -99,19 +190,40 @@ model Food {
     reviews          Review[]
     favorites        Favorite[]
     blogRelatedFoods BlogRelatedFood[]
+    reports          Report[]
 
     @@map("foods")
 }
 
 // Order Model
 model Order {
-    id           String      @id @default(uuid())
-    customerId   String
-    restaurantId String? // Optional: If orders are per-restaurant. If mixed, this might be complex. Assuming mixed cart support might imply null here or multiple orders. Let's assume order per restaurant for simplicity, or just track items.
+    id          String @id @default(uuid())
+    orderNumber String @unique // e.g., FDV-20250128-0012
+    customerId  String
+
+    restaurantId String? // Optional: if mixed orders are allowed, this can be null
     status       OrderStatus @default(PENDING)
-    totalPrice   Decimal
-    createdAt    DateTime    @default(now())
-    updatedAt    DateTime    @updatedAt
+
+    // Pricing
+    subTotal      Decimal
+    deliveryFee   Decimal
+    serviceCharge Decimal @default(0)
+    discount      Decimal @default(0)
+    totalAmount   Decimal
+
+    // Payment
+    paymentMethod PaymentMethod?
+    paymentStatus PaymentStatus  @default(PENDING)
+    transactionId String?
+
+    // Delivery Details
+    deliveryAddress String? // Or Json if structured
+    deliveryCity    String?
+    deliveryNote    String?
+    estimatedTime   String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     // Relationships
     customer   User        @relation(fields: [customerId], references: [id])
@@ -123,11 +235,16 @@ model Order {
 
 // OrderItem Model
 model OrderItem {
-    id       String  @id @default(uuid())
-    orderId  String
-    foodId   String
+    id      String @id @default(uuid())
+    orderId String
+    foodId  String
+
     quantity Int
     price    Decimal // Snapshot of price at time of order
+
+    // Snapshot details (optional but good for history)
+    name      String?
+    thumbnail String?
 
     // Relationships
     order Order @relation(fields: [orderId], references: [id])
@@ -183,14 +300,26 @@ model Favorite {
 
 // Blog Model
 model Blog {
-    id        String   @id @default(uuid())
+    id        String  @id @default(uuid())
     title     String
+    slug      String  @unique
+    excerpt   String?
     content   String
-    authorId  String
+    thumbnail String?
+    videoUrl  String?
+
+    authorId   String
+    categoryId String?
+
+    tags        String[]
+    publishedAt DateTime?
+    status      String    @default("draft") // published, draft
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
     author      User                    @relation(fields: [authorId], references: [id])
+    category    Category?               @relation(fields: [categoryId], references: [id])
     restaurants BlogRelatedRestaurant[]
     foods       BlogRelatedFood[]
 
@@ -227,7 +356,7 @@ model Review {
     customerId   String
     foodId       String?
     restaurantId String?
-    rating       Int      @default(5) // 1-5
+    rating       Float    @default(5) // 1.0 - 5.0
     comment      String?
     createdAt    DateTime @default(now())
     updatedAt    DateTime @updatedAt
@@ -237,4 +366,32 @@ model Review {
     restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
 
     @@map("reviews")
+}
+
+// Report Model
+model Report {
+    id String @id @default(uuid())
+
+    reporterId String
+    reporter   User   @relation(fields: [reporterId], references: [id])
+
+    // Target (Polymorphic-ish via separate FKs)
+    foodId String?
+    food   Food?   @relation(fields: [foodId], references: [id])
+
+    restaurantId String?
+    restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+
+    issueType String
+    reason    String?
+
+    evidenceImages String[]
+    note           String?
+
+    status ReportStatus @default(PENDING)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("reports")
 }
