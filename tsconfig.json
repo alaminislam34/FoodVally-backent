@@ -33,7 +33,6 @@
     /* Path aliases (optional, for cleaner imports) */
     "baseUrl": "./",
     "paths": {
-      "@prisma/*": ["node_modules/@prisma/client/*"],
       "@utils/*": ["src/utils/*"],
       "@routes/*": ["src/routes/*"],
       "@controllers/*": ["src/controllers/*"]

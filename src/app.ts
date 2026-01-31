@@ -17,7 +17,7 @@ app.use(cors());
 // Application routes
 app.use("/api/v1", router);
 
-const getAController = (req: Request, res: Response) => {
+const getAController = (_req: Request, res: Response) => {
   res.send("Welcome to FoodVally Backend!");
 };
 

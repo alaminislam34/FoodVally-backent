@@ -50,31 +50,31 @@ enum ReportStatus {
 
 // User Model
 model User {
-    id        String   @id @default(uuid())
-    name      String
-    email     String   @unique
-    phone     String?
-    password  String?
-    role      UserRole   @default(CUSTOMER)
-    status    UserStatus @default(PENDING) // Email verification status
-    avatar    String?
+    id       String     @id @default(uuid())
+    name     String
+    username String     @unique
+    email    String     @unique
+    phone    String?
+    password String?
+    role     UserRole   @default(CUSTOMER)
+    status   UserStatus @default(PENDING)
+    avatar   String?
 
     // Social Login
-    googleId   String? @unique
+    googleId String? @unique
 
-    // Security
-    otp          String? // Hashed OTP for verification
+    otp          String?
     otpExpiresAt DateTime?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
     // Relationships
-    restaurants Restaurant[] // Provider's restaurants
-    orders      Order[] // Customer's orders
-    cart        Cart? // Customer's cart (1:1)
+    restaurants Restaurant[]
+    orders      Order[]
+    cart        Cart?
     reviews     Review[]
-    blogs       Blog[] // Blogs authored by Provider/Admin
+    blogs       Blog[]
     favorites   Favorite[]
     reports     Report[]
 
