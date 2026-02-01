@@ -35,7 +35,14 @@ const getProfile = async (userId: string) => {
   return user;
 };
 
-const allUsers = async () => {
+const allUsers = async (payload: any) => {
+  const userExist = await prisma.user.findUnique({
+    where: { id: payload.userId },
+  });
+
+  if (!userExist) {
+    throw new AppError(401, "Unauthorized access");
+  }
   const users = await prisma.user.findMany({
     select: {
       id: true,

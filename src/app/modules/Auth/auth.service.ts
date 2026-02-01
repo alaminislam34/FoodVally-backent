@@ -317,7 +317,18 @@ const resendVerification = async (payload: { email: string }) => {
   return { message: "Verification OTP resent" };
 };
 
-const loginWithGoogle = async (idToken: string) => {
+const loginWithGoogle = async (payload: {
+  idToken?: string;
+  token?: string;
+}) => {
+  const idToken = payload?.idToken || payload?.token;
+  if (!idToken) {
+    throw new AppError(400, "Google ID token is required");
+  }
+  if (!config.google_client_id) {
+    throw new AppError(500, "Server configuration error");
+  }
+
   const client = new OAuth2Client(config.google_client_id);
 
   // Verify Google Token
@@ -325,13 +336,17 @@ const loginWithGoogle = async (idToken: string) => {
     idToken,
     audience: config.google_client_id as string,
   });
-  const payload = ticket.getPayload();
+  const googlePayload = ticket.getPayload();
 
-  if (!payload || !payload.email) {
+  if (!googlePayload || !googlePayload.email) {
     throw new AppError(400, "Invalid Google Token");
   }
 
-  const { email, name, picture, sub: googleId } = payload;
+  if (googlePayload.email_verified === false) {
+    throw new AppError(400, "Google email not verified");
+  }
+
+  const { email, name, picture, sub: googleId } = googlePayload;
 
   // Check if user exists
   let user = await prisma.user.findUnique({
@@ -340,6 +355,9 @@ const loginWithGoogle = async (idToken: string) => {
   const parts: string[] = email.split("@");
   const username = parts[0] ?? "";
   if (user) {
+    if (user.status === UserStatus.BLOCKED) {
+      throw new AppError(403, "User is blocked");
+    }
     // If user exists but not linked to Google, link it
     if (!user.googleId) {
       user = await prisma.user.update({
@@ -347,11 +365,12 @@ const loginWithGoogle = async (idToken: string) => {
         data: {
           googleId,
           avatar: (user.avatar || picture || null) as string | null,
+          status: UserStatus.ACTIVE,
+          emailVerifiedAt: user.emailVerifiedAt || new Date(),
         },
       });
     }
   } else {
-    // Create new user (Automatically Verified)
     user = await prisma.user.create({
       data: {
         name: name || "Google User",
@@ -359,7 +378,8 @@ const loginWithGoogle = async (idToken: string) => {
         email,
         googleId,
         avatar: picture || null,
-        status: "ACTIVE",
+        status: UserStatus.ACTIVE,
+        emailVerifiedAt: new Date(),
         // No password for social login
       },
     });
@@ -375,7 +395,7 @@ const loginWithGoogle = async (idToken: string) => {
   const refreshToken = jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     config.jwt_refresh_secret as string,
-    { expiresIn: (config.jwt_refresh_expires_in || "365d") as any },
+    { expiresIn: (config.jwt_refresh_expires_in || "30d") as any },
   );
 
   return {

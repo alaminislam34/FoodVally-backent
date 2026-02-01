@@ -74,7 +74,7 @@ const allUsers = catchAsync(async (req: Request, res: Response) => {
     throw new AppError(403, "Unauthorized access");
   }
 
-  const result = await UserServices.allUsers();
+  const result = await UserServices.allUsers(payload);
 
   res.status(200).json({
     success: true,

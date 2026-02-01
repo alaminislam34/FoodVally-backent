@@ -39,7 +39,7 @@ const loginVerify = catchAsync(async (req: Request, res: Response) => {
 });
 
 const loginWithGoogle = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthService.loginWithGoogle(req.body.token);
+  const result = await AuthService.loginWithGoogle(req.body);
   res.status(200).json({
     success: true,
     message: "Google login successful.",
