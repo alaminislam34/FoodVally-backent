@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import prisma from "../../utils/prisma.js";
 import AppError from "../../errors/AppError.js";
 
@@ -58,9 +59,55 @@ const deleteUser = async (payload: { userId: string }) => {
   return result;
 };
 
+const updateUser = async (userId: string, payload: any) => {
+  if (!userId) {
+    throw new AppError(400, "User id is required");
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (existingUser?.status === "PENDING") {
+    throw new AppError(
+      400,
+      "Please verify your email before updating your profile",
+    );
+  }
+
+  if (!existingUser) {
+    throw new AppError(404, "User not found");
+  }
+
+  const updatePayload = { ...payload };
+  if (updatePayload.password) {
+    updatePayload.password = await bcrypt.hash(updatePayload.password, 12);
+  }
+
+  const result = await prisma.user.update({
+    where: { id: userId },
+    data: updatePayload,
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+      phone: true,
+      role: true,
+      status: true,
+      avatar: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return result;
+};
+
 export const UserServices = {
   createUserIntoDB,
   getProfile,
   allUsers,
   deleteUser,
+  updateUser,
 };

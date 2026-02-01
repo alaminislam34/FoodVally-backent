@@ -117,9 +117,66 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
     message: "User deleted successful",
   });
 });
+
+const updateUser = catchAsync(async (req: Request, res: Response) => {
+  const headers = req.headers.authorization;
+  if (!headers || !headers.startsWith("Bearer ")) {
+    throw new AppError(401, "Unauthorized");
+  }
+
+  const token = headers.split(" ")[1];
+  if (!token) {
+    throw new AppError(400, "Access token is required");
+  }
+
+  if (!config.jwt_access_secret) {
+    throw new AppError(500, "Server configuration error");
+  }
+
+  let payload: any;
+  try {
+    payload = jwt.verify(token, config.jwt_access_secret);
+  } catch (error) {
+    throw new AppError(401, "Invalid or expired token");
+  }
+
+  const { userId, ...updateData } = req.body ?? {};
+  if (!updateData || Object.keys(updateData).length === 0) {
+    throw new AppError(400, "Update data is required");
+  }
+
+  const isAdmin = payload.role === "ADMIN";
+  if (!isAdmin && userId && userId !== payload.userId) {
+    throw new AppError(403, "Unauthorized access");
+  }
+
+  const allowedFields = isAdmin
+    ? ["name", "username", "phone", "avatar", "role", "status"]
+    : ["name", "username", "phone", "avatar", "password"];
+
+  const filteredData = Object.fromEntries(
+    Object.entries(updateData).filter(([key]) => allowedFields.includes(key)),
+  );
+
+  if (Object.keys(filteredData).length === 0) {
+    throw new AppError(400, "No valid fields to update");
+  }
+
+  const targetUserId = isAdmin ? userId || payload.userId : payload.userId;
+
+  const result = await UserServices.updateUser(targetUserId, filteredData);
+
+  res.status(200).json({
+    success: true,
+    message: "User updated successfully",
+    data: result,
+  });
+});
+
 export const UserControllers = {
   createUser,
   getProfile,
   allUsers,
   deleteUser,
+  updateUser,
 };
