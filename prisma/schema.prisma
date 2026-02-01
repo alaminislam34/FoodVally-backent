@@ -65,6 +65,7 @@ model User {
 
     otp          String?
     otpExpiresAt DateTime?
+    emailVerifiedAt DateTime?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

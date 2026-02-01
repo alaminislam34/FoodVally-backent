@@ -9,5 +9,6 @@ router.post('/login', AuthController.loginRequest);
 router.post('/login-verify', AuthController.loginVerify);
 router.post('/google', AuthController.loginWithGoogle);
 router.post('/refresh-token', AuthController.refreshToken);
+router.post('/resend-verification', AuthController.resendVerification);
 
 export const AuthRoutes = router;

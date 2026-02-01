@@ -56,6 +56,15 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const resendVerification = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.resendVerification(req.body);
+  res.status(200).json({
+    success: true,
+    message: "Verification email sent.",
+    data: result,
+  });
+});
+
 export const AuthController = {
   registerUser,
   verifyAccount,
@@ -63,4 +72,5 @@ export const AuthController = {
   loginVerify,
   loginWithGoogle,
   refreshToken,
+  resendVerification,
 };

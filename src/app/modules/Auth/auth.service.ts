@@ -20,7 +20,38 @@ const registerUser = async (payload: any) => {
   });
 
   if (existingUser) {
-    throw new AppError(400, "User already exists");
+    if (
+      existingUser.status === UserStatus.ACTIVE ||
+      existingUser.emailVerifiedAt
+    ) {
+      throw new AppError(400, "Email already registered. Please login.");
+    }
+
+    const otp = generateOTP();
+    const hashedOTP = await bcrypt.hash(otp, 12);
+    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    const hashedPassword = password
+      ? await bcrypt.hash(password, 12)
+      : undefined;
+
+    await prisma.user.update({
+      where: { email },
+      data: {
+        name: name ?? existingUser.name,
+        password: hashedPassword ?? existingUser.password,
+        otp: hashedOTP,
+        otpExpiresAt,
+      },
+    });
+
+    await sendEmail(
+      email,
+      "Account Verification OTP",
+      `<p>Your OTP for account verification is <strong>${otp}</strong>. It expires in 5 minutes.</p>`,
+    );
+
+    return { message: "Verification OTP resent" };
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);
@@ -87,6 +118,7 @@ const verifyAccount = async (payload: { email: string; otp: string }) => {
     where: { email },
     data: {
       status: UserStatus.ACTIVE,
+      emailVerifiedAt: new Date(),
       otp: null,
       otpExpiresAt: null,
     },
@@ -98,7 +130,7 @@ const verifyAccount = async (payload: { email: string; otp: string }) => {
 
 const loginRequest = async (payload: { email: string; password: string }) => {
   const { email, password } = payload;
-
+  console.log(email, password);
   const user = await prisma.user.findUnique({
     where: { email },
   });
@@ -249,6 +281,42 @@ const refreshToken = async (payload: { refresh_token: string }) => {
   };
 };
 
+const resendVerification = async (payload: { email: string }) => {
+  const { email } = payload;
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  if (user.status === UserStatus.ACTIVE || user.emailVerifiedAt) {
+    throw new AppError(400, "User already verified");
+  }
+
+  const otp = generateOTP();
+  const hashedOTP = await bcrypt.hash(otp, 12);
+  const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+  await prisma.user.update({
+    where: { email },
+    data: {
+      otp: hashedOTP,
+      otpExpiresAt,
+    },
+  });
+
+  await sendEmail(
+    email,
+    "Account Verification OTP",
+    `<p>Your OTP for account verification is <strong>${otp}</strong>. It expires in 5 minutes.</p>`,
+  );
+
+  return { message: "Verification OTP resent" };
+};
+
 const loginWithGoogle = async (idToken: string) => {
   const client = new OAuth2Client(config.google_client_id);
 
@@ -323,4 +391,5 @@ export const AuthService = {
   loginVerify,
   loginWithGoogle,
   refreshToken,
+  resendVerification,
 };
