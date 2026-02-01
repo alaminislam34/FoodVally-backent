@@ -74,12 +74,32 @@ const allUsers = catchAsync(async (req: Request, res: Response) => {
     throw new AppError(403, "Unauthorized access");
   }
 
-  const result = await UserServices.allUsers(payload);
+  const { search, page, limit } = req.query as Record<
+    string,
+    string | undefined
+  >;
+  const pageNumber = page ? Number(page) : 1;
+  const limitNumber = limit ? Number(limit) : 10;
+
+  if (Number.isNaN(pageNumber) || pageNumber < 1) {
+    throw new AppError(400, "Page must be a positive number");
+  }
+  if (Number.isNaN(limitNumber) || limitNumber < 1 || limitNumber > 100) {
+    throw new AppError(400, "Limit must be between 1 and 100");
+  }
+
+  const result = await UserServices.allUsers({
+    ...payload,
+    search,
+    page: pageNumber,
+    limit: limitNumber,
+  });
 
   res.status(200).json({
     success: true,
     message: "Users fetched successfully",
-    data: result,
+    data: result.data,
+    meta: result.meta,
   });
 });
 
@@ -173,10 +193,36 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const blockedUser = catchAsync(async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  if (!userId) {
+    throw new AppError(400, "User id is required");
+  }
+  await UserServices.blockedUser(userId);
+  res.status(200).json({
+    success: true,
+    message: "User blocked successfully",
+  });
+});
+
+const unblockedUser = catchAsync(async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  if (!userId) {
+    throw new AppError(400, "User id is required");
+  }
+  await UserServices.unblockedUser(userId);
+  res.status(200).json({
+    success: true,
+    message: "User unblocked successfully",
+  });
+});
+
 export const UserControllers = {
   createUser,
   getProfile,
   allUsers,
   deleteUser,
   updateUser,
+  blockedUser,
+  unblockedUser,
 };

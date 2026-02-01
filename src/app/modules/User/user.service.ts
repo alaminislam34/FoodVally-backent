@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 import prisma from "../../utils/prisma.js";
 import AppError from "../../errors/AppError.js";
 
@@ -43,7 +44,42 @@ const allUsers = async (payload: any) => {
   if (!userExist) {
     throw new AppError(401, "Unauthorized access");
   }
-  const users = await prisma.user.findMany({
+
+  const search =
+    typeof payload?.search === "string" ? payload.search.trim() : "";
+  const page = Number(payload?.page ?? 1);
+  const limit = Number(payload?.limit ?? 10);
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.UserWhereInput | undefined = search
+    ? {
+        OR: [
+          {
+            username: {
+              contains: search,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+          {
+            name: {
+              contains: search,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+          {
+            email: {
+              contains: search,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+        ],
+      }
+    : undefined;
+
+  const findManyArgs: Prisma.UserFindManyArgs = {
+    skip,
+    take: limit,
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       name: true,
@@ -54,8 +90,29 @@ const allUsers = async (payload: any) => {
       status: true,
       username: true,
     },
-  });
-  return users;
+  };
+
+  const countArgs: Prisma.UserCountArgs = {};
+
+  if (where) {
+    findManyArgs.where = where;
+    countArgs.where = where;
+  }
+
+  const [users, total] = await Promise.all([
+    prisma.user.findMany(findManyArgs),
+    prisma.user.count(countArgs),
+  ]);
+
+  return {
+    data: users,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 const deleteUser = async (payload: { userId: string }) => {
@@ -111,10 +168,44 @@ const updateUser = async (userId: string, payload: any) => {
   return result;
 };
 
+const blockedUser = async (userId: string) => {
+  if (!userId) {
+    throw new AppError(400, "User id is required");
+  }
+  const existingUser = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!existingUser) {
+    throw new AppError(404, "User not found");
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: { status: "BLOCKED" },
+  });
+};
+
+const unblockedUser = async (userId: string) => {
+  if (!userId) {
+    throw new AppError(400, "User id is required");
+  }
+  const existingUser = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!existingUser) {
+    throw new AppError(404, "User not found");
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: { status: "ACTIVE" },
+  });
+};
+
 export const UserServices = {
   createUserIntoDB,
   getProfile,
   allUsers,
   deleteUser,
   updateUser,
+  blockedUser,
+  unblockedUser,
 };
