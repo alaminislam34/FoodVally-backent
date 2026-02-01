@@ -34,7 +34,33 @@ const getProfile = async (userId: string) => {
   return user;
 };
 
+const allUsers = async () => {
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      avatar: true,
+      email: true,
+      phone: true,
+      role: true,
+      status: true,
+      username: true,
+    },
+  });
+  return users;
+};
+
+const deleteUser = async (payload: { userId: string }) => {
+  const { userId } = payload;
+  const result = await prisma.user.delete({
+    where: { id: userId },
+  });
+  return result;
+};
+
 export const UserServices = {
   createUserIntoDB,
   getProfile,
+  allUsers,
+  deleteUser,
 };

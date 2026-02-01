@@ -182,7 +182,7 @@ const loginRequest = async (payload: { email: string; password: string }) => {
 
 const loginVerify = async (payload: { email: string; otp: string }) => {
   const { email, otp } = payload;
-  console.log(email, otp);
+
   const user = await prisma.user.findUnique({
     where: { email },
   });
