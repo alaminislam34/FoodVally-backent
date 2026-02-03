@@ -57,6 +57,12 @@ const allUsers = async (payload) => {
                         mode: Prisma.QueryMode.insensitive,
                     },
                 },
+                {
+                    email: {
+                        contains: search,
+                        mode: Prisma.QueryMode.insensitive,
+                    },
+                },
             ],
         }
         : undefined;
@@ -136,10 +142,42 @@ const updateUser = async (userId, payload) => {
     });
     return result;
 };
+const blockedUser = async (userId) => {
+    if (!userId) {
+        throw new AppError(400, "User id is required");
+    }
+    const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+    if (!existingUser) {
+        throw new AppError(404, "User not found");
+    }
+    await prisma.user.update({
+        where: { id: userId },
+        data: { status: "BLOCKED" },
+    });
+};
+const unblockedUser = async (userId) => {
+    if (!userId) {
+        throw new AppError(400, "User id is required");
+    }
+    const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+    if (!existingUser) {
+        throw new AppError(404, "User not found");
+    }
+    await prisma.user.update({
+        where: { id: userId },
+        data: { status: "ACTIVE" },
+    });
+};
 export const UserServices = {
     createUserIntoDB,
     getProfile,
     allUsers,
     deleteUser,
     updateUser,
+    blockedUser,
+    unblockedUser,
 };

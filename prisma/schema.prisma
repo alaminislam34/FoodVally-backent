@@ -60,6 +60,8 @@ model User {
     status   UserStatus @default(PENDING)
     avatar   String?
 
+    restaurantId String? @unique
+
     // Social Login
     googleId String? @unique
 
@@ -72,6 +74,7 @@ model User {
 
     // Relationships
     restaurants Restaurant[]
+    restaurant  Restaurant? @relation("UserRestaurant", fields: [restaurantId], references: [id])
     orders      Order[]
     cart        Cart?
     reviews     Review[]
@@ -121,6 +124,7 @@ model Restaurant {
 
     // Relationships
     provider               User                    @relation(fields: [providerId], references: [id])
+    user                   User?                   @relation("UserRestaurant")
     foods                  Food[]
     orders                 Order[] // Orders containing items from this restaurant (optional link for filtering)
     reviews                Review[]

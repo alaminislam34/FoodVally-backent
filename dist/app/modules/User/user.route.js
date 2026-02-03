@@ -6,4 +6,6 @@ router.get("/me", UserControllers.getProfile);
 router.get("/", UserControllers.allUsers);
 router.delete("/", UserControllers.deleteUser);
 router.put("/", UserControllers.updateUser);
+router.post("/block", UserControllers.blockedUser);
+router.post("/unblock", UserControllers.unblockedUser);
 export const UserRoutes = router;

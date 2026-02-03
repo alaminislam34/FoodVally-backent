@@ -20,14 +20,18 @@ CREATE TYPE "ReportStatus" AS ENUM ('PENDING', 'RESOLVED', 'DISMISSED');
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "username" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "phone" TEXT,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "role" "UserRole" NOT NULL DEFAULT 'CUSTOMER',
     "status" "UserStatus" NOT NULL DEFAULT 'PENDING',
     "avatar" TEXT,
+    "restaurantId" TEXT,
+    "googleId" TEXT,
     "otp" TEXT,
     "otpExpiresAt" TIMESTAMP(3),
+    "emailVerifiedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -243,7 +247,16 @@ CREATE TABLE "reports" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_restaurantId_key" ON "users"("restaurantId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_googleId_key" ON "users"("googleId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "restaurants_slug_key" ON "restaurants"("slug");
@@ -271,6 +284,9 @@ CREATE UNIQUE INDEX "favorites_customerId_foodId_key" ON "favorites"("customerId
 
 -- CreateIndex
 CREATE UNIQUE INDEX "blogs_slug_key" ON "blogs"("slug");
+
+-- AddForeignKey
+ALTER TABLE "users" ADD CONSTRAINT "users_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "restaurants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "restaurants" ADD CONSTRAINT "restaurants_providerId_fkey" FOREIGN KEY ("providerId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

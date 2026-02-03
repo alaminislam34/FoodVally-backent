@@ -164,10 +164,34 @@ const updateUser = catchAsync(async (req, res) => {
         data: result,
     });
 });
+const blockedUser = catchAsync(async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) {
+        throw new AppError(400, "User id is required");
+    }
+    await UserServices.blockedUser(userId);
+    res.status(200).json({
+        success: true,
+        message: "User blocked successfully",
+    });
+});
+const unblockedUser = catchAsync(async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) {
+        throw new AppError(400, "User id is required");
+    }
+    await UserServices.unblockedUser(userId);
+    res.status(200).json({
+        success: true,
+        message: "User unblocked successfully",
+    });
+});
 export const UserControllers = {
     createUser,
     getProfile,
     allUsers,
     deleteUser,
     updateUser,
+    blockedUser,
+    unblockedUser,
 };

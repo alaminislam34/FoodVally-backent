@@ -6,8 +6,7 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthService.registerUser(req.body);
   res.status(201).json({
     success: true,
-    message: "User registered successfully. Please check your email for OTP.",
-    data: result,
+    message: result.message,
   });
 });
 
@@ -15,8 +14,7 @@ const verifyAccount = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthService.verifyAccount(req.body);
   res.status(200).json({
     success: true,
-    message: "Account verified successfully.",
-    data: result,
+    message: result.message,
   });
 });
 
@@ -24,7 +22,7 @@ const loginRequest = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthService.loginRequest(req.body);
   res.status(200).json({
     success: true,
-    message: "Login OTP sent successfully.",
+    message: "Logged in successfully.",
     data: result,
   });
 });

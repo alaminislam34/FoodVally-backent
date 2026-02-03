@@ -48,7 +48,146 @@ const registerUser = async (payload: any) => {
     await sendEmail(
       email,
       "Account Verification OTP",
-      `<p>Your OTP for account verification is <strong>${otp}</strong>. It expires in 5 minutes.</p>`,
+      `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>FoodVally Verification</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #334155;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      width: 100%;
+      padding: 40px 15px;
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+    .brand_container {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .brand_image {
+      max-width: 180px;
+      height: auto;
+      object-fit: contain;
+    }
+    .content_header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .heading {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+    .text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #64748b;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .otp-container {
+      background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+      margin: 30px 0;
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+    }
+    .otp-box {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 8px;
+      margin-left: 8px; /* Offsets letter spacing for perfect center */
+    }
+    .expiry {
+      text-align: center;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 30px;
+    }
+    .security-notice {
+      background-color: #f1f5f9;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #475569;
+      text-align: center;
+    }
+    .divider {
+      height: 1px;
+      background-color: #e2e8f0;
+      margin: 32px 0;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    .footer strong {
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="brand_container">
+        <img src="https://i.ibb.co.com/psygcQz/foodvely.png" alt="FoodVally Logo" class="brand_image" /> 
+      </div>
+
+      <div class="content_header">
+        <div class="heading">Verify your email</div>
+        <p class="text">
+          Hi <strong>${name}</strong>,<br>
+          Use the code below to securely sign in to your FoodVally account.
+        </p>
+      </div>
+
+      <div class="otp-container">
+        <div class="otp-box">${otp}</div>
+      </div>
+
+      <div class="expiry">
+        Expires in <span style="color: #1e293b; font-weight: 600;">5 minutes</span>
+      </div>
+
+      <div class="security-notice">
+        <strong>Not you?</strong> If you didn't request this, you can safely ignore this email.
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="footer">
+        Thanks for being part of the <strong>FoodVally</strong> community!<br>
+        &copy; 2026 FoodVally Inc. All rights reserved.
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
     );
 
     return { message: "Verification OTP resent" };
@@ -63,7 +202,7 @@ const registerUser = async (payload: any) => {
   // OTP expires in 5 minutes
   const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  const newUser = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name,
       username: username,
@@ -79,11 +218,151 @@ const registerUser = async (payload: any) => {
   await sendEmail(
     email,
     "Account Verification OTP",
-    `<p>Your OTP for account verification is <strong>${otp}</strong>. It expires in 5 minutes.</p>`,
+    `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>FoodVally Verification</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #334155;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      width: 100%;
+      padding: 40px 15px;
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+    .brand_container {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .brand_image {
+      max-width: 180px;
+      height: auto;
+      object-fit: contain;
+    }
+    .content_header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .heading {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+    .text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #64748b;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .otp-container {
+      background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+      margin: 30px 0;
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+    }
+    .otp-box {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 8px;
+      margin-left: 8px; /* Offsets letter spacing for perfect center */
+    }
+    .expiry {
+      text-align: center;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 30px;
+    }
+    .security-notice {
+      background-color: #f1f5f9;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #475569;
+      text-align: center;
+    }
+    .divider {
+      height: 1px;
+      background-color: #e2e8f0;
+      margin: 32px 0;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    .footer strong {
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="brand_container">
+        <img src="https://i.ibb.co.com/psygcQz/foodvely.png" alt="FoodVally Logo" class="brand_image" /> 
+      </div>
+
+      <div class="content_header">
+        <div class="heading">Verify your email</div>
+        <p class="text">
+          Hi <strong>${name}</strong>,<br>
+          Use the code below to securely sign in to your FoodVally account.
+        </p>
+      </div>
+
+      <div class="otp-container">
+        <div class="otp-box">${otp}</div>
+      </div>
+
+      <div class="expiry">
+        Expires in <span style="color: #1e293b; font-weight: 600;">5 minutes</span>
+      </div>
+
+      <div class="security-notice">
+        <strong>Not you?</strong> If you didn't request this, you can safely ignore this email.
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="footer">
+        Thanks for being part of the <strong>FoodVally</strong> community!<br>
+        &copy; 2026 FoodVally Inc. All rights reserved.
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
   );
 
-  const { password: _, otp: __, ...userData } = newUser;
-  return userData;
+  return {
+    message: "User registered successfully. Please check your email for OTP.",
+  };
 };
 
 const verifyAccount = async (payload: { email: string; otp: string }) => {
@@ -114,7 +393,7 @@ const verifyAccount = async (payload: { email: string; otp: string }) => {
     throw new AppError(400, "Invalid OTP");
   }
 
-  const updatedUser = await prisma.user.update({
+  await prisma.user.update({
     where: { email },
     data: {
       status: UserStatus.ACTIVE,
@@ -124,13 +403,11 @@ const verifyAccount = async (payload: { email: string; otp: string }) => {
     },
   });
 
-  const { password: _, otp: __, ...userData } = updatedUser;
-  return userData;
+  return { message: "Account verified successfully." };
 };
 
 const loginRequest = async (payload: { email: string; password: string }) => {
   const { email, password } = payload;
-  console.log(email, password);
   const user = await prisma.user.findUnique({
     where: { email },
   });
@@ -157,27 +434,20 @@ const loginRequest = async (payload: { email: string; password: string }) => {
     throw new AppError(403, "Invalid credentials");
   }
 
-  // Generate OTP for 2FA
-  const otp = generateOTP();
-  const hashedOTP = await bcrypt.hash(otp, 12);
-  // OTP expires in 5 minutes
-  const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-  await prisma.user.update({
-    where: { email },
-    data: {
-      otp: hashedOTP,
-      otpExpiresAt,
-    },
-  });
-
-  await sendEmail(
-    email,
-    "Login OTP",
-    `<p>Your OTP for login is <strong>${otp}</strong>. It expires in 5 minutes.</p>`,
+  // Generate Tokens
+  const accessToken = jwt.sign(
+    { userId: user.id, email: user.email, role: user.role },
+    config.jwt_access_secret as string,
+    { expiresIn: (config.jwt_access_expires_in || "1d") as any },
   );
 
-  return { message: "OTP sent to your email" };
+  const refreshToken = jwt.sign(
+    { userId: user.id, email: user.email, role: user.role },
+    config.jwt_refresh_secret as string,
+    { expiresIn: (config.jwt_refresh_expires_in || "365d") as any },
+  );
+
+  return { access: accessToken, refresh: refreshToken };
 };
 
 const loginVerify = async (payload: { email: string; otp: string }) => {

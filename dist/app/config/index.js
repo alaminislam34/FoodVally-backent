@@ -14,4 +14,5 @@ export default {
     email_port: process.env.EMAIL_PORT,
     email_from: process.env.EMAIL_FROM,
     google_client_id: process.env.GOOGLE_CLIENT_ID,
+    auth_disable_otp: process.env.AUTH_DISABLE_OTP,
 };
