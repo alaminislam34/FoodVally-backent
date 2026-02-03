@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { Prisma } from "@prisma/client";
+import { Prisma, UserStatus } from "@prisma/client";
 import prisma from "../../utils/prisma.js";
 import AppError from "../../errors/AppError.js";
 
@@ -168,7 +168,7 @@ const updateUser = async (userId: string, payload: any) => {
   return result;
 };
 
-const blockedUser = async (userId: string) => {
+const updateStatus = async (userId: string, status: UserStatus) => {
   if (!userId) {
     throw new AppError(400, "User id is required");
   }
@@ -180,25 +180,11 @@ const blockedUser = async (userId: string) => {
   }
   await prisma.user.update({
     where: { id: userId },
-    data: { status: "BLOCKED" },
+    data: { status },
   });
+  return { message: "User status updated successfully" };
 };
 
-const unblockedUser = async (userId: string) => {
-  if (!userId) {
-    throw new AppError(400, "User id is required");
-  }
-  const existingUser = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-  if (!existingUser) {
-    throw new AppError(404, "User not found");
-  }
-  await prisma.user.update({
-    where: { id: userId },
-    data: { status: "ACTIVE" },
-  });
-};
 
 export const UserServices = {
   createUserIntoDB,
@@ -206,6 +192,5 @@ export const UserServices = {
   allUsers,
   deleteUser,
   updateUser,
-  blockedUser,
-  unblockedUser,
+  updateStatus,
 };

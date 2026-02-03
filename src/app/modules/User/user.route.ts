@@ -8,7 +8,6 @@ router.get("/me", UserControllers.getProfile);
 router.get("/", UserControllers.allUsers);
 router.delete("/", UserControllers.deleteUser);
 router.put("/", UserControllers.updateUser);
-router.post("/block", UserControllers.blockedUser);
-router.post("/unblock", UserControllers.unblockedUser);
+router.put("/update-status", UserControllers.updateStatus);
 
 export const UserRoutes = router;

@@ -10,5 +10,7 @@ router.post('/login-verify', AuthController.loginVerify);
 router.post('/google', AuthController.loginWithGoogle);
 router.post('/refresh-token', AuthController.refreshToken);
 router.post('/resend-verification', AuthController.resendVerification);
+router.post('/forgot-password', AuthController.forgotPassword);
+router.post('/reset-password', AuthController.resetPassword);
 
 export const AuthRoutes = router;

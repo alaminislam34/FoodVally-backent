@@ -388,6 +388,7 @@ const verifyAccount = async (payload: { email: string; otp: string }) => {
     throw new AppError(400, "OTP expired");
   }
 
+  console.log(otp, "exsiting otp:", user.otp);
   const isOtpValid = await bcrypt.compare(otp, user.otp);
   if (!isOtpValid) {
     throw new AppError(400, "Invalid OTP");
@@ -438,16 +439,16 @@ const loginRequest = async (payload: { email: string; password: string }) => {
   const accessToken = jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     config.jwt_access_secret as string,
-    { expiresIn: (config.jwt_access_expires_in || "1d") as any },
+    { expiresIn: (config.jwt_access_expires_in || "7d") as any },
   );
 
   const refreshToken = jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     config.jwt_refresh_secret as string,
-    { expiresIn: (config.jwt_refresh_expires_in || "365d") as any },
+    { expiresIn: (config.jwt_refresh_expires_in || "30d") as any },
   );
 
-  return { access: accessToken, refresh: refreshToken };
+  return { accessToken, refreshToken };
 };
 
 const loginVerify = async (payload: { email: string; otp: string }) => {
@@ -487,13 +488,13 @@ const loginVerify = async (payload: { email: string; otp: string }) => {
   const accessToken = jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     config.jwt_access_secret as string,
-    { expiresIn: (config.jwt_access_expires_in || "1d") as any },
+    { expiresIn: (config.jwt_access_expires_in || "7d") as any },
   );
 
   const refreshToken = jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     config.jwt_refresh_secret as string,
-    { expiresIn: (config.jwt_refresh_expires_in || "365d") as any },
+    { expiresIn: (config.jwt_refresh_expires_in || "30d") as any },
   );
 
   return {
@@ -536,13 +537,13 @@ const refreshToken = async (payload: { refresh_token: string }) => {
   const accessToken = jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     config.jwt_access_secret as string,
-    { expiresIn: (config.jwt_access_expires_in || "1d") as any },
+    { expiresIn: (config.jwt_access_expires_in || "7d") as any },
   );
 
   const newRefreshToken = jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     config.jwt_refresh_secret as string,
-    { expiresIn: (config.jwt_refresh_expires_in || "365d") as any },
+    { expiresIn: (config.jwt_refresh_expires_in || "30d") as any },
   );
 
   return {
@@ -567,6 +568,7 @@ const resendVerification = async (payload: { email: string }) => {
   }
 
   const otp = generateOTP();
+  console.log("new otp", otp);
   const hashedOTP = await bcrypt.hash(otp, 12);
   const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -581,12 +583,13 @@ const resendVerification = async (payload: { email: string }) => {
   await sendEmail(
     email,
     "Account Verification OTP",
-    `<p>Your OTP for account verification is <strong>${otp}</strong>. It expires in 5 minutes.</p>`,
+    `<p>Your OTP for account verification is <strong>new otp ${otp}</strong>. It expires in 5 minutes.</p>`,
   );
 
   return { message: "Verification OTP resent" };
 };
 
+// todo: implement social login properly
 const loginWithGoogle = async (payload: {
   idToken?: string;
   token?: string;
@@ -659,7 +662,7 @@ const loginWithGoogle = async (payload: {
   const accessToken = jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     config.jwt_access_secret as string,
-    { expiresIn: (config.jwt_access_expires_in || "1d") as any },
+    { expiresIn: (config.jwt_access_expires_in || "7d") as any },
   );
 
   const refreshToken = jwt.sign(
@@ -674,6 +677,67 @@ const loginWithGoogle = async (payload: {
   };
 };
 
+const forgotPassword = async (payload: { email: string }) => {
+  const { email } = payload;
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+  const otp = generateOTP();
+  const hashedOTP = await bcrypt.hash(otp, 12);
+  const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+  await prisma.user.update({
+    where: { email },
+    data: {
+      otp: hashedOTP,
+      otpExpiresAt,
+    },
+  });
+  await sendEmail(
+    email,
+    "Password Reset OTP",
+    `<p>Your OTP for password reset is <strong>${otp}</strong>. It expires in 5 minutes.</p>`,
+  );
+  return { message: "Password reset OTP sent" };
+};
+
+const resetPassword = async (payload: {
+  email: string;
+  otp: string;
+  new_password: string;
+}) => {
+  const { email, otp, new_password } = payload;
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  if (!user.otp || !user.otpExpiresAt) {
+    throw new AppError(400, "No OTP request found");
+  }
+  if (new Date() > user.otpExpiresAt) {
+    throw new AppError(400, "OTP expired");
+  }
+  const isOtpValid = await bcrypt.compare(otp, user.otp);
+  if (!isOtpValid) {
+    throw new AppError(400, "Invalid OTP");
+  }
+  const hashedPassword = await bcrypt.hash(new_password, 12);
+  await prisma.user.update({
+    where: { email },
+    data: {
+      password: hashedPassword,
+      otp: null,
+      otpExpiresAt: null,
+    },
+  });
+  return { message: "Password reset successfully." };
+};
+
 export const AuthService = {
   registerUser,
   verifyAccount,
@@ -682,4 +746,6 @@ export const AuthService = {
   loginWithGoogle,
   refreshToken,
   resendVerification,
+  forgotPassword,
+  resetPassword,
 };

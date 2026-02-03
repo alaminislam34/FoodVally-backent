@@ -27,6 +27,7 @@ const loginRequest = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// todo: implement social login properly
 const loginVerify = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthService.loginVerify(req.body);
   res.status(200).json({
@@ -63,6 +64,22 @@ const resendVerification = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.forgotPassword(req.body);
+  res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.resetPassword(req.body);
+  res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
+
 export const AuthController = {
   registerUser,
   verifyAccount,
@@ -71,4 +88,6 @@ export const AuthController = {
   loginWithGoogle,
   refreshToken,
   resendVerification,
+  forgotPassword,
+  resetPassword,
 };
